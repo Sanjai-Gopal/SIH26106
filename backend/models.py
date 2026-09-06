@@ -6,6 +6,8 @@ from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field, ConfigDict
 from enum import Enum
 
+from backend.ml.models import MLPrediction
+
 
 class AuthStatus(str, Enum):
     PASS = "PASS"
@@ -98,17 +100,17 @@ class IPIntelligence(BaseModel):
 
 
 class RiskAssessment(BaseModel):
-    score: int = Field(..., ge=0, le=100, description="Deterministic risk score between 0 and 100")
+    score: int = Field(..., ge=0, le=100, description="Risk score between 0 and 100")
     classification: RiskClassification = Field(..., description="Risk tier classification")
     reasons: List[str] = Field(default_factory=list, description="Human-readable forensic rationale")
     signals: List[RiskSignal] = Field(default_factory=list, description="Detailed list of triggered rule signals")
     scoring_type: str = Field(
         default="deterministic_rule_based_prototype",
-        description="Indicates this is deterministic forensic rule scoring, not ML inference"
+        description="Indicates scoring methodology: 'deterministic_forensic_only' | 'forensic_plus_ml'"
     )
-    ml_signals: Optional[MLIntelligence] = Field(
+    ml_signals: Optional[MLPrediction] = Field(
         default=None,
-        description="Pluggable interface for AI/ML teammate's predictions"
+        description="Standardized AI/ML inference signals and classification"
     )
     ip_intelligence: Optional[IPIntelligence] = Field(
         default=None,
@@ -140,6 +142,10 @@ class EmailAnalysisResponse(BaseModel):
     domain_intelligence: List[Dict[str, Any]] = Field(
         default_factory=list,
         description="DNS & infrastructure intelligence for extracted domains"
+    )
+    ml_signals: Optional[MLPrediction] = Field(
+        default=None,
+        description="AI/ML model inference signals and classification"
     )
     metadata: AnalysisMetadata = Field(..., description="Execution and parser metadata")
 

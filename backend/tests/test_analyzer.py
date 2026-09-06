@@ -103,7 +103,7 @@ def test_analyze_suspicious_sample_email():
     # Verify Risk Assessment
     assert result.risk.score >= 70
     assert result.risk.classification in (RiskClassification.HIGH_RISK, RiskClassification.CRITICAL_RISK)
-    assert result.risk.scoring_type == "deterministic_rule_based_prototype"
+    assert result.risk.scoring_type in ("forensic_plus_ml", "deterministic_forensic_only")
 
     # Verify IP Intelligence placeholder
     assert result.risk.ip_intelligence.status == "unavailable"

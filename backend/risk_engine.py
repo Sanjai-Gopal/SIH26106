@@ -21,6 +21,7 @@ from backend.models import (
     MLIntelligence,
     IPIntelligence
 )
+from backend.ml.models import MLPrediction
 
 
 # Threat keywords with assigned categories and weights
@@ -268,11 +269,13 @@ def calculate_risk(
     iocs: IOCs,
     relay_hops: List[RelayHop],
     plain_body: str,
-    ml_signals: Optional[MLIntelligence] = None,
+    ml_signals: Optional[MLPrediction] = None,
     ip_intel: Optional[IPIntelligence] = None
 ) -> RiskAssessment:
     """
-    Calculates deterministic prototype forensic risk score (0-100) and maps to risk tiers.
+    Calculates forensic risk assessment with transparent risk fusion:
+    - 70% Forensic signal score + 30% ML signal score (when ML inference is available)
+    - 100% Deterministic forensic scoring (when ML is unavailable or in error)
     """
     signals: List[RiskSignal] = []
 
@@ -283,33 +286,57 @@ def calculate_risk(
     signals.extend(evaluate_content_keywords(email_meta.subject, plain_body))
     signals.extend(evaluate_relay_signals(relay_hops))
 
-    # Calculate raw sum score
-    total_score = sum(s.score_impact for s in signals)
+    # Calculate deterministic forensic score (0-100)
+    raw_forensic_score = sum(s.score_impact for s in signals)
+    forensic_score = max(0, min(100, raw_forensic_score))
 
-    # Cap score strictly between 0 and 100
-    capped_score = max(0, min(100, total_score))
+    reasons = [s.description for s in signals]
+
+    # Evaluate ML risk contribution
+    scoring_type = "deterministic_forensic_only"
+    final_score = forensic_score
+
+    if ml_signals and ml_signals.status == "available":
+        norm_label = (ml_signals.label or "").lower()
+        confidence = max(0.0, min(1.0, float(ml_signals.confidence or 0.0)))
+        ml_risk_score: Optional[int] = None
+
+        if norm_label in ("phishing", "bec", "impersonation", "malicious"):
+            # Threat predictions scale directly with confidence (0-100)
+            ml_risk_score = round(confidence * 100)
+        elif norm_label in ("benign", "clean", "ham", "safe"):
+            # Benign predictions lower threat risk inversely with confidence
+            ml_risk_score = round((1.0 - confidence) * 100)
+
+        if ml_risk_score is not None:
+            # 70% Forensic signals + 30% ML inference
+            fused_score = round((0.70 * forensic_score) + (0.30 * ml_risk_score))
+            final_score = max(0, min(100, fused_score))
+            scoring_type = "forensic_plus_ml"
+            reasons.append(
+                f"ML model ({ml_signals.model_name}) predicted '{norm_label}' with {confidence * 100:.1f}% confidence; "
+                f"fused with forensic signals (70% forensic / 30% ML weighting)."
+            )
 
     # Classify risk level
-    if capped_score <= 25:
+    if final_score <= 25:
         classification = RiskClassification.LOW_RISK
-    elif capped_score <= 55:
+    elif final_score <= 55:
         classification = RiskClassification.MEDIUM_RISK
-    elif capped_score <= 80:
+    elif final_score <= 80:
         classification = RiskClassification.HIGH_RISK
     else:
         classification = RiskClassification.CRITICAL_RISK
 
-    # Human-readable forensic reasons
-    reasons = [s.description for s in signals]
     if not reasons:
         reasons.append("No suspicious forensic signals or authentication anomalies detected.")
 
     return RiskAssessment(
-        score=capped_score,
+        score=final_score,
         classification=classification,
         reasons=reasons,
         signals=signals,
-        scoring_type="deterministic_rule_based_prototype",
+        scoring_type=scoring_type,
         ml_signals=ml_signals,
         ip_intelligence=ip_intel or get_default_ip_intelligence()
     )

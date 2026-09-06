@@ -23,12 +23,14 @@ from backend.ioc_extractor import extract_iocs
 from backend.risk_engine import calculate_risk
 from backend.ip_intelligence import IPIntelligenceService
 from backend.domain_intelligence import DomainIntelligenceService
+from backend.ml import MLService
 
 PARSER_VERSION = "1.0.0-prototype"
 
 # Shared intelligence services with in-memory caching
 ip_intel_service = IPIntelligenceService()
 domain_intel_service = DomainIntelligenceService()
+ml_service = MLService()
 
 
 def generate_case_id() -> str:
@@ -74,16 +76,20 @@ def analyze_email_bytes(
 
     iocs = extract_iocs(plain_body, html_body, header_emails)
 
-    # 4. Calculate Risk
+    # 4. AI/ML Threat Inference
+    ml_prediction = ml_service.predict_email(email_meta, plain_body)
+
+    # 5. Calculate Risk with ML Signal Fusion
     risk = calculate_risk(
         email_meta=email_meta,
         auth=auth_results,
         iocs=iocs,
         relay_hops=relay_hops,
-        plain_body=plain_body
+        plain_body=plain_body,
+        ml_signals=ml_prediction
     )
 
-    # 5. IP Intelligence & Network Geolocation Enrichment
+    # 6. IP Intelligence & Network Geolocation Enrichment
     all_ips = list(iocs.ips)
     for hop in relay_hops:
         if hop.ip and hop.ip not in all_ips:
@@ -95,7 +101,7 @@ def analyze_email_bytes(
     except Exception:
         ip_intel_json = []
 
-    # 6. Domain Intelligence & DNS Resolution Enrichment
+    # 7. Domain Intelligence & DNS Resolution Enrichment
     try:
         domain_intel_records = domain_intel_service.lookup_domains(iocs.domains)
         domain_intel_json = [d.model_dump(by_alias=True) for d in domain_intel_records]
@@ -121,5 +127,6 @@ def analyze_email_bytes(
         risk=risk,
         ip_intelligence=ip_intel_json,
         domain_intelligence=domain_intel_json,
+        ml_signals=ml_prediction,
         metadata=metadata
     )
