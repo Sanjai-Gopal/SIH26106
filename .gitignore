@@ -9,4 +9,8 @@ htmlcov/
 .venv/
 venv/
 ENV/
-*.log
+# SQLite databases and evidence storage
+*.db
+*.sqlite
+*.sqlite3
+data/
