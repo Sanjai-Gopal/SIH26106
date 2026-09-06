@@ -133,6 +133,14 @@ class EmailAnalysisResponse(BaseModel):
     iocs: IOCs = Field(..., description="Extracted Indicators of Compromise (URLs, IPs, Domains, Emails)")
     relay_path: List[RelayHop] = Field(default_factory=list, description="Ordered Received-header relay hops")
     risk: RiskAssessment = Field(..., description="Forensic risk assessment and signal details")
+    ip_intelligence: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="Network infrastructure intelligence for extracted IP addresses"
+    )
+    domain_intelligence: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="DNS & infrastructure intelligence for extracted domains"
+    )
     metadata: AnalysisMetadata = Field(..., description="Execution and parser metadata")
 
 
