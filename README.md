@@ -16,4 +16,4 @@ An AI-powered forensic intelligence platform that analyzes raw email files (.eml
 `Python` `FastAPI` `PyTorch` `Transformers` `XGBoost` `SHAP` `NetworkX` `PostgreSQL` `Next.js` `Tailwind` `Leaflet` `Solidity`
 
 ## 👥 Team Dino Coders
-Sanjai G · Gogulraj A · Praveen Parth S · Mugesh L · Kishore V · Lekitha S
+Kishore V · Gogulraj A · Praveen Parth S · Mugesh L · Sanjai G · Lekitha S
