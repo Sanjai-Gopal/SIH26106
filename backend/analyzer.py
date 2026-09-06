@@ -33,7 +33,8 @@ def generate_case_id() -> str:
 
 def analyze_email_bytes(
     raw_bytes: bytes,
-    file_name: Optional[str] = "uploaded_email.eml"
+    file_name: Optional[str] = "uploaded_email.eml",
+    case_id: Optional[str] = None
 ) -> EmailAnalysisResponse:
     """
     Main analysis pipeline function.
@@ -43,7 +44,7 @@ def analyze_email_bytes(
         raise ValueError("Cannot analyze empty email content.")
 
     start_time = time.perf_counter()
-    case_id = generate_case_id()
+    active_case_id = case_id or generate_case_id()
     analysis_ts = datetime.now(timezone.utc).isoformat()
     file_size = len(raw_bytes)
 
@@ -86,7 +87,7 @@ def analyze_email_bytes(
     )
 
     return EmailAnalysisResponse(
-        case_id=case_id,
+        case_id=active_case_id,
         email=email_meta,
         authentication=auth_results,
         iocs=iocs,

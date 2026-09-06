@@ -1,3 +1,17 @@
+# SQLite databases
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Preserved Evidence Data
+data/
+data/evidence/
+*.eml
+!samples/*.eml
+
 # Python bytecode and caches
 __pycache__/
 *.py[cod]
