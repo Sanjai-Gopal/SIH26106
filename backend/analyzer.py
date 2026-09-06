@@ -1,6 +1,7 @@
 """
 Central Analyzer Orchestrator.
-Coordinates email parsing, authentication checks, IOC extraction, relay analysis, and risk assessment.
+Coordinates email parsing, authentication checks, IOC extraction, relay analysis,
+risk assessment, IP geolocation intelligence, and domain DNS intelligence.
 """
 
 import time
@@ -20,8 +21,14 @@ from backend.header_parser import parse_email_headers
 from backend.relay_parser import parse_relay_path
 from backend.ioc_extractor import extract_iocs
 from backend.risk_engine import calculate_risk
+from backend.ip_intelligence import IPIntelligenceService
+from backend.domain_intelligence import DomainIntelligenceService
 
 PARSER_VERSION = "1.0.0-prototype"
+
+# Shared intelligence services with in-memory caching
+ip_intel_service = IPIntelligenceService()
+domain_intel_service = DomainIntelligenceService()
 
 
 def generate_case_id() -> str:
@@ -33,17 +40,18 @@ def generate_case_id() -> str:
 
 def analyze_email_bytes(
     raw_bytes: bytes,
-    file_name: Optional[str] = "uploaded_email.eml"
+    file_name: Optional[str] = "uploaded_email.eml",
+    case_id: Optional[str] = None
 ) -> EmailAnalysisResponse:
     """
     Main analysis pipeline function.
-    Safely parses raw email bytes and generates a forensic analysis report.
+    Safely parses raw email bytes and generates a forensic analysis report with IP and domain intelligence.
     """
     if not raw_bytes or len(raw_bytes.strip()) == 0:
         raise ValueError("Cannot analyze empty email content.")
 
     start_time = time.perf_counter()
-    case_id = generate_case_id()
+    active_case_id = case_id or generate_case_id()
     analysis_ts = datetime.now(timezone.utc).isoformat()
     file_size = len(raw_bytes)
 
@@ -75,6 +83,25 @@ def analyze_email_bytes(
         plain_body=plain_body
     )
 
+    # 5. IP Intelligence & Network Geolocation Enrichment
+    all_ips = list(iocs.ips)
+    for hop in relay_hops:
+        if hop.ip and hop.ip not in all_ips:
+            all_ips.append(hop.ip)
+
+    try:
+        ip_intel_records = ip_intel_service.lookup_ips(all_ips)
+        ip_intel_json = [r.model_dump(by_alias=True) for r in ip_intel_records]
+    except Exception:
+        ip_intel_json = []
+
+    # 6. Domain Intelligence & DNS Resolution Enrichment
+    try:
+        domain_intel_records = domain_intel_service.lookup_domains(iocs.domains)
+        domain_intel_json = [d.model_dump(by_alias=True) for d in domain_intel_records]
+    except Exception:
+        domain_intel_json = []
+
     elapsed_ms = round((time.perf_counter() - start_time) * 1000, 2)
 
     metadata = AnalysisMetadata(
@@ -86,11 +113,13 @@ def analyze_email_bytes(
     )
 
     return EmailAnalysisResponse(
-        case_id=case_id,
+        case_id=active_case_id,
         email=email_meta,
         authentication=auth_results,
         iocs=iocs,
         relay_path=relay_hops,
         risk=risk,
+        ip_intelligence=ip_intel_json,
+        domain_intelligence=domain_intel_json,
         metadata=metadata
     )
