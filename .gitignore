@@ -24,3 +24,8 @@ htmlcov/
 venv/
 ENV/
 *.log
+
+# Next.js frontend artifacts
+frontend/node_modules/
+frontend/.next/
+frontend/out/
