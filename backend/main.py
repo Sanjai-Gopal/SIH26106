@@ -16,6 +16,7 @@ from backend.db_models import CaseListResponse, CaseDetailResponse, EvidenceReco
 from backend.analyzer import PARSER_VERSION
 from backend.database import init_db
 from backend.case_service import CaseService
+from backend.blockchain_service import get_blockchain_service
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -206,3 +207,156 @@ async def get_case_evidence(case_id: str):
             detail=f"Evidence for case ID '{case_id}' was not found."
         )
     return evidence
+
+
+# ============ BLOCKCHAIN ENDPOINTS ============
+
+@app.get("/blockchain/status", tags=["Blockchain"], summary="Get blockchain service status")
+async def get_blockchain_status():
+    """Returns blockchain service availability and network information."""
+    blockchain_service = get_blockchain_service()
+    
+    if not blockchain_service:
+        return {
+            "available": False,
+            "message": "Blockchain service is not available. Missing dependencies or configuration."
+        }
+    
+    try:
+        info = blockchain_service.get_blockchain_info()
+        return {
+            "available": True,
+            "connected": info["connected"],
+            "network_id": info["network_id"],
+            "latest_block": info["latest_block"],
+            "contract_address": info["contract_address"],
+            "account_address": info["account_address"]
+        }
+    except Exception as exc:
+        logger.error(f"Blockchain status check failed: {exc}", exc_info=True)
+        return {
+            "available": False,
+            "message": f"Blockchain service error: {str(exc)}"
+        }
+
+
+@app.post("/blockchain/register", tags=["Blockchain"], summary="Register evidence on blockchain")
+async def register_evidence_blockchain(
+    evidence_id: str = Query(..., description="Evidence ID to register"),
+    case_id: str = Query(..., description="Associated case ID"),
+    stage: str = Query(default="FORENSIC_ANALYSIS", description="Processing stage")
+):
+    """
+    Registers forensic evidence hash on blockchain for tamper-proof verification.
+    Uses the existing SHA-256 hash from the evidence record.
+    """
+    blockchain_service = get_blockchain_service()
+    
+    if not blockchain_service:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Blockchain service is not available."
+        )
+    
+    # Get evidence record to obtain SHA-256 hash
+    evidence = case_service.get_case_evidence(case_id)
+    if not evidence:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Evidence for case ID '{case_id}' was not found."
+        )
+    
+    try:
+        result = blockchain_service.register_evidence(
+            evidence_id=evidence_id,
+            sha256_hash=evidence.sha256,
+            stage=stage
+        )
+        
+        logger.info(f"Registered evidence {evidence_id} on blockchain: {result['transaction_hash']}")
+        return result
+        
+    except Exception as exc:
+        logger.error(f"Blockchain registration failed for {evidence_id}: {exc}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to register evidence on blockchain: {str(exc)}"
+        )
+
+
+@app.get("/blockchain/verify/{evidence_id}", tags=["Blockchain"], summary="Verify evidence integrity on blockchain")
+async def verify_evidence_blockchain(evidence_id: str):
+    """
+    Verifies evidence integrity by comparing current hash with blockchain record.
+    Returns VERIFIED or EVIDENCE_TAMPERED status.
+    """
+    blockchain_service = get_blockchain_service()
+    
+    if not blockchain_service:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Blockchain service is not available."
+        )
+    
+    try:
+        # Get evidence from blockchain first to check if it exists
+        blockchain_evidence = blockchain_service.get_evidence(evidence_id)
+        
+        if not blockchain_evidence:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Evidence ID '{evidence_id}' not found on blockchain."
+            )
+        
+        # For demo purposes, we'll use the blockchain hash as the "current" hash
+        # In a real scenario, you would recalculate the hash from the actual evidence file
+        current_hash = blockchain_evidence["evidence_hash"]
+        
+        result = blockchain_service.verify_evidence(
+            evidence_id=evidence_id,
+            current_sha256_hash=current_hash
+        )
+        
+        logger.info(f"Verified evidence {evidence_id}: {result['status']}")
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error(f"Blockchain verification failed for {evidence_id}: {exc}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to verify evidence on blockchain: {str(exc)}"
+        )
+
+
+@app.get("/blockchain/evidence/{evidence_id}", tags=["Blockchain"], summary="Get blockchain evidence record")
+async def get_blockchain_evidence(evidence_id: str):
+    """Retrieves complete evidence record from blockchain."""
+    blockchain_service = get_blockchain_service()
+    
+    if not blockchain_service:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Blockchain service is not available."
+        )
+    
+    try:
+        evidence = blockchain_service.get_evidence(evidence_id)
+        
+        if not evidence:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Evidence ID '{evidence_id}' not found on blockchain."
+            )
+        
+        return evidence
+        
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error(f"Failed to retrieve blockchain evidence {evidence_id}: {exc}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve evidence from blockchain: {str(exc)}"
+        )

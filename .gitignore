@@ -29,3 +29,13 @@ ENV/
 frontend/node_modules/
 frontend/.next/
 frontend/out/
+
+# Blockchain artifacts and secrets
+blockchain/node_modules/
+blockchain/artifacts/
+blockchain/cache/
+blockchain/deployment.json
+blockchain/.env
+blockchain/typechain/
+blockchain/typechain-types/
+blockchain/demo-results.json
