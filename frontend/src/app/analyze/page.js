@@ -337,14 +337,14 @@ export default function AnalyzePage() {
           <div className="flex items-center gap-2">
             <button
               onClick={resetWorkbench}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-mono font-medium border border-[var(--border-subtle)] bg-[var(--surface-container-low)] hover:bg-[var(--surface-container-high)] text-[var(--text-secondary)] transition-colors cursor-pointer"
+              className="btn-cyber-secondary px-3.5 py-1.5 rounded-xl text-xs"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               <span>New Ingest</span>
             </button>
             <Link
               href={`/report/${metadata.case_id || 'latest'}`}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-mono font-bold bg-[var(--surface-container-high)] hover:bg-[var(--surface-container-highest)] text-[var(--text-primary)] border border-[var(--border-subtle)] transition-colors"
+              className="btn-cyber-primary px-3.5 py-1.5 rounded-xl text-xs shadow-sm"
             >
               <FileText className="w-3.5 h-3.5" />
               <span>Full Docket</span>
@@ -553,7 +553,7 @@ Subject: ..."
               <button
                 onClick={handleAnalyze}
                 disabled={loading || (activeTab === 'upload' && !file) || (activeTab === 'paste' && !rawText.trim())}
-                className="w-full sm:w-auto px-6 py-2.5 rounded-md font-mono text-xs font-bold bg-[var(--primary-cyan)] text-[#05070b] hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+                className="btn-cyber-primary w-full sm:w-auto px-6 py-2.5 rounded-xl text-xs shadow-md"
               >
                 {loading ? (
                   <>
@@ -601,7 +601,7 @@ Subject: ..."
                 <button
                   onClick={() => setCurrentStep((prev) => Math.max(1, prev - 1))}
                   disabled={currentStep === 1}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-mono font-medium border border-[var(--border-subtle)] bg-[var(--surface-container-low)] hover:bg-[var(--surface-container-high)] disabled:opacity-30 disabled:cursor-not-allowed text-[var(--text-secondary)] transition-colors cursor-pointer"
+                  className="btn-cyber-secondary px-3 py-1.5 rounded-lg text-xs"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
                   <span>Previous</span>
@@ -610,7 +610,7 @@ Subject: ..."
                 <button
                   onClick={() => setCurrentStep((prev) => Math.min(6, prev + 1))}
                   disabled={currentStep === 6}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-mono font-bold bg-[var(--primary-cyan)] text-[#05070b] hover:brightness-110 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+                  className="btn-cyber-primary px-3 py-1.5 rounded-lg text-xs"
                 >
                   <span>Next Stage</span>
                   <ArrowRight className="w-3.5 h-3.5" />
@@ -618,10 +618,10 @@ Subject: ..."
 
                 <button
                   onClick={() => setAutoPlay(!autoPlay)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-mono font-medium border transition-colors cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-medium border transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-cyan)] cursor-pointer ${
                     autoPlay
                       ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-400'
-                      : 'border-[var(--border-subtle)] bg-[var(--surface-container-low)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                      : 'border-[var(--border-subtle)] bg-[var(--surface-container-low)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-cyan)]'
                   }`}
                   title="Auto-play through all 6 forensic stages"
                 >

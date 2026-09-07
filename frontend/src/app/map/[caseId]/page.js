@@ -89,18 +89,18 @@ export default function CaseMapPage() {
   const hops = data.relay_path || [];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[var(--border-subtle)]">
         <div>
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-1.5 text-xs font-mono text-[var(--text-muted)] hover:text-[var(--primary-cyan)] transition-colors mb-2 cursor-pointer"
+            className="flex items-center gap-1.5 text-xs font-mono text-[var(--text-muted)] hover:text-[var(--primary-cyan)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-cyan)] rounded px-1 -ml-1 transition-colors mb-2 cursor-pointer"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Dossier
           </button>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-black font-mono text-[var(--text-primary)]">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-2xl sm:text-3xl font-black font-mono tracking-tight text-[var(--text-primary)]">
               Geo-Relay Flight Path: {data.case_id}
             </h1>
             <span className="badge text-[10px] bg-[var(--primary-cyan)]/10 text-[var(--primary-cyan)] border border-[var(--border-cyan)] font-bold">

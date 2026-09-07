@@ -79,14 +79,14 @@ export default function IntelPanel({ ipIntelligence = [], domainIntelligence = [
                   <div>
                     <span className="text-[var(--text-muted)] block">Hosting / VPN</span>
                     <span className={intel.is_vpn_tor ? 'text-rose-500 font-bold' : intel.is_hosting ? 'text-amber-500 font-bold' : 'text-emerald-500 font-bold'}>
-                      {intel.is_vpn_tor ? '🚨 VPN/Tor Node' : intel.is_hosting ? 'Cloud Hosting' : 'Residential/Corp'}
+                      {intel.is_vpn_tor ? 'VPN/Tor Node (Alert)' : intel.is_hosting ? 'Cloud Hosting' : 'Residential/Corp'}
                     </span>
                   </div>
                 </div>
 
                 {intel.disclaimer && (
                   <p className="text-[10px] text-[var(--text-muted)] pt-1 border-t border-[var(--border-subtle)]">
-                    ℹ {intel.disclaimer}
+                    Notice: {intel.disclaimer}
                   </p>
                 )}
               </div>
@@ -129,7 +129,7 @@ export default function IntelPanel({ ipIntelligence = [], domainIntelligence = [
                   <div>
                     <span className="text-[var(--text-muted)] block">Lookalike Risk</span>
                     <span className={dIntel.is_typosquatting ? 'text-rose-500 font-bold' : 'text-emerald-500 font-bold'}>
-                      {dIntel.is_typosquatting ? '🚨 Typosquat Detected' : 'No Impersonation'}
+                      {dIntel.is_typosquatting ? 'Typosquat Detected (Alert)' : 'No Impersonation'}
                     </span>
                   </div>
                   <div>

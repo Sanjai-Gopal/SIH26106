@@ -167,7 +167,7 @@ function BlockchainExplorerContent() {
         <div className="flex items-center gap-2.5">
           <button
             onClick={handlePrintCert}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-md font-mono text-xs font-bold bg-[var(--primary-cyan)] text-[#05070b] hover:brightness-110 transition-all shadow-sm shrink-0 cursor-pointer"
+            className="btn-cyber-primary px-4 py-2.5 rounded-xl text-xs shadow-sm shrink-0"
           >
             <Printer className="w-4 h-4" />
             <span>PRINT CUSTODY CERTIFICATE</span>
@@ -323,15 +323,15 @@ function BlockchainExplorerContent() {
               rows={4}
               value={verificationInput}
               onChange={(e) => setVerificationInput(e.target.value)}
-              placeholder="Paste SHA-256 hash here..."
-              className="w-full p-3 rounded-xl bg-[var(--surface-container-low)] border border-[var(--border-subtle)] text-xs font-mono text-[var(--text-primary)] outline-none focus:border-[var(--primary-cyan)] shadow-inner"
+              placeholder="Paste SHA-256 hash here to test byte-level integrity..."
+              className="cyber-input p-3"
             />
 
             <button
               onClick={handleVerifyHash}
-              className="mt-3 w-full py-2.5 rounded-xl font-mono font-bold text-xs btn-cyber-primary shadow-sm cursor-pointer"
+              className="mt-3 w-full py-2.5 rounded-xl btn-cyber-primary shadow-sm text-xs"
             >
-              Verify Match
+              Verify Cryptographic Match
             </button>
 
             {verifyResult !== null && (
@@ -345,12 +345,12 @@ function BlockchainExplorerContent() {
                 {verifyResult ? (
                   <>
                     <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                    <span>✓ SHA-256 MATCH CONFIRMED: Payload is authentic and untampered.</span>
+                    <span>SHA-256 MATCH CONFIRMED: Payload is authentic and untampered.</span>
                   </>
                 ) : (
                   <>
                     <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
-                    <span>🚨 HASH MISMATCH: Payload has been altered or modified in transit!</span>
+                    <span>HASH MISMATCH: Payload has been altered or modified in transit.</span>
                   </>
                 )}
               </div>

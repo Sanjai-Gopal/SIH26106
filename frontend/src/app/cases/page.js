@@ -16,7 +16,12 @@ import {
   ExternalLink,
   Blocks,
   Download,
-  RefreshCw
+  RefreshCw,
+  Paperclip,
+  Activity,
+  ShieldAlert,
+  CheckCircle2,
+  Database
 } from 'lucide-react';
 import { listCases } from '@/lib/api';
 import { getHistory, clearHistory } from '@/lib/storage';
@@ -61,7 +66,7 @@ export default function CasesPage() {
   }, []);
 
   const handleClearLocal = () => {
-    if (confirm('Clear local browser case cache? (Server SQLite records will remain intact)')) {
+    if (confirm('Purge local browser case records? (Server SQLite records remain intact)')) {
       clearHistory();
       fetchCaseList();
     }
@@ -80,35 +85,47 @@ export default function CasesPage() {
     return matchesSearch && matchesTier;
   });
 
+  // Calculate live metrics for the Hero Lead
+  const totalCount = cases.length;
+  const criticalHighCount = cases.filter(c => c.risk_classification === 'CRITICAL RISK' || c.risk_classification === 'HIGH RISK').length;
+  const cleanCount = cases.filter(c => c.risk_classification === 'LOW RISK').length;
+  const avgScore = totalCount > 0 ? Math.round(cases.reduce((acc, c) => acc + (c.risk_score || 0), 0) / totalCount) : 0;
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16 space-y-6">
-      {/* Header */}
+      {/* Header with Title & Primary Actions */}
       <motion.div
-        initial={{ opacity: 0, y: -20 }}
+        initial={{ opacity: 0, y: -15 }}
         animate={{ opacity: 1, y: 0 }}
         className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[var(--border-subtle)]"
       >
         <div>
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-[var(--primary-cyan)]/15 border border-[var(--border-cyan)] flex items-center justify-center shadow-sm">
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-xl bg-[var(--primary-cyan)]/15 border border-[var(--border-cyan)] flex items-center justify-center shadow-sm">
               <FolderArchive className="w-5 h-5 text-[var(--primary-cyan)]" />
             </div>
-            <h1 className="text-2xl font-bold font-mono text-[var(--text-primary)]">
-              Forensic Case Vault
-            </h1>
-            <span className="badge text-[10px] bg-[var(--primary-cyan)]/10 text-[var(--primary-cyan)] border border-[var(--border-cyan)] font-bold">
-              {cases.length} PERSISTED CASES
-            </span>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-black font-mono tracking-tight text-[var(--text-primary)]">
+                Forensic Case Vault
+              </h1>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="badge text-[10px] bg-[var(--primary-cyan)]/10 text-[var(--primary-cyan)] border border-[var(--border-cyan)] font-bold">
+                  {totalCount} EVIDENCE RECORDS
+                </span>
+                <span className="text-[11px] text-[var(--text-muted)] font-mono flex items-center gap-1">
+                  <Database className="w-3 h-3 text-[var(--primary-cyan)]" /> SQLite Active
+                </span>
+              </div>
+            </div>
           </div>
-          <p className="text-xs text-[var(--text-secondary)] font-mono mt-1">
-            SQLite database storage synchronized with SHA-256 blockchain custody verification.
-          </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           <button
             onClick={fetchCaseList}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-mono font-bold text-[var(--text-primary)] bg-[var(--surface-container-low)] hover:bg-[var(--surface-container)] border border-[var(--border-subtle)] transition-all shadow-sm cursor-pointer"
+            disabled={loading}
+            aria-busy={loading}
+            className="btn-cyber-secondary px-3.5 py-2 rounded-xl text-xs"
             title="Refresh database records"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-[var(--primary-cyan)]' : ''}`} />
@@ -117,7 +134,8 @@ export default function CasesPage() {
           {cases.length > 0 && (
             <button
               onClick={handleClearLocal}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-mono font-bold text-rose-500 hover:text-rose-600 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 transition-all shadow-sm cursor-pointer"
+              className="btn-cyber-destructive px-3.5 py-2 rounded-xl text-xs"
+              title="Purge local cache"
             >
               <Trash2 className="w-3.5 h-3.5" />
               <span>Purge Cache</span>
@@ -125,12 +143,71 @@ export default function CasesPage() {
           )}
           <Link
             href="/analyze"
-            className="btn-cyber-primary flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-mono font-bold shadow-md hover:scale-105 transition-transform"
+            className="btn-cyber-primary px-4 py-2 rounded-xl text-xs shadow-md"
           >
-            <span>+ New Analysis</span>
+            <span>+ Ingest Evidence</span>
           </Link>
         </div>
       </motion.div>
+
+      {/* One Thing Leads: Vault Metric Bar */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="glass-card p-4 flex items-center gap-3.5 border-l-4 border-l-[var(--primary-cyan)]">
+          <div className="w-10 h-10 rounded-xl bg-[var(--primary-cyan)]/10 flex items-center justify-center shrink-0">
+            <Database className="w-5 h-5 text-[var(--primary-cyan)]" />
+          </div>
+          <div>
+            <div className="text-2xl sm:text-3xl font-black font-mono text-[var(--text-primary)]">
+              {totalCount}
+            </div>
+            <div className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider font-semibold">
+              Persisted Dossiers
+            </div>
+          </div>
+        </div>
+
+        <div className="glass-card p-4 flex items-center gap-3.5 border-l-4 border-l-rose-500">
+          <div className="w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center shrink-0">
+            <ShieldAlert className="w-5 h-5 text-rose-500" />
+          </div>
+          <div>
+            <div className="text-2xl sm:text-3xl font-black font-mono text-rose-500">
+              {criticalHighCount}
+            </div>
+            <div className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider font-semibold">
+              High / Critical Threats
+            </div>
+          </div>
+        </div>
+
+        <div className="glass-card p-4 flex items-center gap-3.5 border-l-4 border-l-emerald-500">
+          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0">
+            <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+          </div>
+          <div>
+            <div className="text-2xl sm:text-3xl font-black font-mono text-emerald-500">
+              {cleanCount}
+            </div>
+            <div className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider font-semibold">
+              Passed / Low Risk
+            </div>
+          </div>
+        </div>
+
+        <div className="glass-card p-4 flex items-center gap-3.5 border-l-4 border-l-amber-500">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center shrink-0">
+            <Activity className="w-5 h-5 text-amber-500" />
+          </div>
+          <div>
+            <div className="text-2xl sm:text-3xl font-black font-mono text-[var(--text-primary)]">
+              {avgScore}<span className="text-xs text-[var(--text-muted)] font-normal">/100</span>
+            </div>
+            <div className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider font-semibold">
+              Mean Risk Index
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Search and Filters */}
       <div className="flex flex-col md:flex-row gap-3">
@@ -141,7 +218,7 @@ export default function CasesPage() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search by Case ID (CASE-...), Subject, Sender, or Filename..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[var(--surface-container-low)] border border-[var(--border-subtle)] text-xs font-mono text-[var(--text-primary)] outline-none focus:border-[var(--primary-cyan)] shadow-inner"
+            className="cyber-input pl-10 pr-4"
           />
         </div>
 
@@ -152,7 +229,8 @@ export default function CasesPage() {
               <button
                 key={tier}
                 onClick={() => setFilterTier(tier)}
-                className={`px-3 py-1.5 rounded-lg text-[11px] font-mono font-bold transition-all ${
+                aria-selected={active}
+                className={`px-3 py-1.5 rounded-lg text-[11px] font-mono font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-cyan)] ${
                   active
                     ? 'bg-[var(--surface-base)] text-[var(--primary-cyan)] border border-[var(--border-cyan)] shadow-sm'
                     : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
@@ -170,14 +248,14 @@ export default function CasesPage() {
         <div className="glass-card p-12 text-center">
           <FileSearch className="w-12 h-12 mx-auto text-[var(--text-muted)] mb-3 opacity-50" />
           <p className="text-sm font-mono font-bold text-[var(--text-primary)] mb-1">
-            {cases.length === 0 ? 'No cases found in database.' : 'No cases match current filter criteria.'}
+            {cases.length === 0 ? 'No cases found in vault.' : 'No cases match current filter criteria.'}
           </p>
           <p className="text-xs font-mono text-[var(--text-muted)] mb-4">
-            Upload an EML message to persist evidence records.
+            Upload an EML email file to initiate automated forensic analysis.
           </p>
           <Link
             href="/analyze"
-            className="btn-cyber-primary inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-mono font-bold shadow-md"
+            className="btn-cyber-primary inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-mono font-bold shadow-md"
           >
             Ingest New EML
           </Link>
@@ -204,13 +282,13 @@ export default function CasesPage() {
                     </span>
                     {item.file_size && (
                       <span className="text-[10px] font-mono text-[var(--text-muted)]">
-                        • {(item.file_size / 1024).toFixed(1)} KB
+                        ( {(item.file_size / 1024).toFixed(1)} KB )
                       </span>
                     )}
                   </div>
 
                   <h3 className="text-sm font-bold text-[var(--text-primary)] truncate">
-                    {item.subject || 'No Subject'}
+                    {item.subject || 'No Subject Specified'}
                   </h3>
 
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] font-mono text-[var(--text-secondary)]">
@@ -219,7 +297,10 @@ export default function CasesPage() {
                       {item.timestamp ? new Date(item.timestamp).toLocaleString() : 'N/A'}
                     </span>
                     {item.file_name && (
-                      <span className="truncate max-w-xs">📎 {item.file_name}</span>
+                      <span className="truncate max-w-xs flex items-center gap-1">
+                        <Paperclip className="w-3 h-3 text-[var(--text-muted)]" />
+                        <span>{item.file_name}</span>
+                      </span>
                     )}
                   </div>
                 </div>
@@ -246,7 +327,7 @@ export default function CasesPage() {
 
                   <Link
                     href={`/report/${encodeURIComponent(item.case_id)}`}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-mono font-bold text-[var(--primary-cyan)] bg-[var(--primary-cyan)]/10 hover:bg-[var(--primary-cyan)]/20 border border-[var(--border-cyan)] transition-all shadow-sm"
+                    className="flex items-center gap-1 px-3.5 py-2 rounded-xl text-xs font-mono font-bold text-[var(--primary-cyan)] bg-[var(--primary-cyan)]/10 hover:bg-[var(--primary-cyan)]/20 active:scale-[0.98] border border-[var(--border-cyan)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-cyan)] transition-all shadow-sm"
                   >
                     <span>Inspect</span>
                     <ArrowRight className="w-3.5 h-3.5" />

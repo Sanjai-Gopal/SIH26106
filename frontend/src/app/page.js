@@ -195,7 +195,7 @@ export default function DashboardPage() {
 
           <Link
             href="/analyze"
-            className="flex items-center gap-2 px-4 py-2 rounded-md font-mono text-xs font-bold bg-[var(--primary-cyan)] text-[#05070b] hover:brightness-110 transition-all shadow-sm"
+            className="btn-cyber-primary px-4 py-2 rounded-xl text-xs shadow-sm"
           >
             <PlusCircle className="w-4 h-4" />
             <span>Ingest New Email</span>
@@ -467,7 +467,7 @@ export default function DashboardPage() {
                 placeholder="Search case ID or subject..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 pr-3 py-1.5 text-xs font-mono rounded-md bg-[var(--surface-container-low)] border border-[var(--border-subtle)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--primary-cyan)] w-52 sm:w-64"
+                className="cyber-input pl-8 pr-3 py-1.5 w-52 sm:w-64 text-xs"
               />
             </div>
 
@@ -476,10 +476,10 @@ export default function DashboardPage() {
                 <button
                   key={tier}
                   onClick={() => setRiskFilter(tier)}
-                  className={`px-2.5 py-1 rounded text-[11px] font-bold transition-colors cursor-pointer ${
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-cyan)] active:scale-[0.98] ${
                     riskFilter === tier
                       ? 'bg-[var(--primary-cyan)] text-[#05070b]'
-                      : 'border border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                      : 'border border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--border-cyan)]'
                   }`}
                 >
                   {tier}

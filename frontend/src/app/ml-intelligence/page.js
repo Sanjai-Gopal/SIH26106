@@ -204,19 +204,19 @@ export default function MLIntelligencePage() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => handleLoadPreset('bec')}
-            className="px-3 py-1.5 rounded-md text-xs font-mono font-bold bg-rose-500/10 text-rose-400 border border-rose-500/30 hover:bg-rose-500/20 transition-colors cursor-pointer"
+            className="px-3 py-1.5 rounded-lg text-xs font-mono font-bold bg-rose-500/10 text-rose-400 border border-rose-500/30 hover:bg-rose-500/20 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 transition-all cursor-pointer"
           >
             BEC Specimen
           </button>
           <button
             onClick={() => handleLoadPreset('phish')}
-            className="px-3 py-1.5 rounded-md text-xs font-mono font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-500/20 transition-colors cursor-pointer"
+            className="px-3 py-1.5 rounded-lg text-xs font-mono font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-500/20 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 transition-all cursor-pointer"
           >
             Phishing Specimen
           </button>
           <button
             onClick={() => handleLoadPreset('clean')}
-            className="px-3 py-1.5 rounded-md text-xs font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors cursor-pointer"
+            className="px-3 py-1.5 rounded-lg text-xs font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-all cursor-pointer"
           >
             Clean Specimen
           </button>
@@ -429,7 +429,7 @@ export default function MLIntelligencePage() {
         <div className="mt-4 flex justify-end">
           <button
             onClick={handleRunInference}
-            className="flex items-center gap-2 px-5 py-2 rounded-md font-mono text-xs font-bold bg-[var(--primary-cyan)] text-[#05070b] hover:brightness-110 transition-all cursor-pointer shadow-sm"
+            className="btn-cyber-primary px-5 py-2.5 rounded-xl text-xs shadow-md"
           >
             <Play className="w-3.5 h-3.5 fill-current" />
             <span>Evaluate Threat Heuristics</span>

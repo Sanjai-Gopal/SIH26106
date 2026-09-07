@@ -163,7 +163,7 @@ export default function RelayMapInner({ relayPath = [] }) {
 
                 {hop.forensic_notes && (
                   <p className="text-[10px] text-amber-300 bg-amber-500/10 p-1 rounded border border-amber-500/20 mt-1">
-                    ⚠ {hop.forensic_notes}
+                    <span className="font-bold text-amber-400">[ALERT]</span> {hop.forensic_notes}
                   </p>
                 )}
               </div>

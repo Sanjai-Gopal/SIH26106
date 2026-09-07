@@ -18,7 +18,8 @@ import {
   RefreshCw,
   ExternalLink,
   ShieldCheck,
-  CheckCircle2
+  CheckCircle2,
+  Zap
 } from 'lucide-react';
 import Link from 'next/link';
 import { getAnalysis } from '@/lib/storage';
@@ -144,7 +145,7 @@ export default function ReportPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16 space-y-6">
       {/* Top Header with Navigation & Quick Actions */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
@@ -154,7 +155,7 @@ export default function ReportPage() {
         <div>
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-1.5 text-xs font-mono text-[var(--text-muted)] hover:text-[var(--primary-cyan)] transition-colors mb-2 no-print"
+            className="flex items-center gap-1.5 text-xs font-mono text-[var(--text-muted)] hover:text-[var(--primary-cyan)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-cyan)] rounded px-1 -ml-1 transition-colors mb-2 no-print cursor-pointer"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Cases
           </button>
@@ -176,7 +177,10 @@ export default function ReportPage() {
               {data.metadata?.file_name || 'email.eml'}
             </span>
             {data.metadata?.execution_time_ms && (
-              <span className="text-[var(--primary-cyan)] font-bold">⚡ {data.metadata.execution_time_ms}ms execution</span>
+              <span className="text-[var(--primary-cyan)] font-bold flex items-center gap-1">
+                <Zap className="w-3.5 h-3.5 text-[var(--primary-cyan)]" />
+                <span>{data.metadata.execution_time_ms}ms execution</span>
+              </span>
             )}
           </div>
         </div>
@@ -186,7 +190,7 @@ export default function ReportPage() {
           {data.relay_path?.length > 0 && (
             <Link
               href={`/map/${encodeURIComponent(data.case_id)}`}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-mono font-bold text-[var(--primary-cyan)] bg-[var(--primary-cyan)]/10 hover:bg-[var(--primary-cyan)]/20 border border-[var(--border-cyan)] transition-all shadow-sm"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-mono font-bold text-[var(--primary-cyan)] bg-[var(--primary-cyan)]/10 hover:bg-[var(--primary-cyan)]/20 active:scale-[0.98] border border-[var(--border-cyan)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-cyan)] transition-all shadow-sm"
             >
               <MapPin className="w-4 h-4 text-[var(--primary-cyan)]" />
               <span>Geo-Relay Map</span>
@@ -194,14 +198,14 @@ export default function ReportPage() {
           )}
           <Link
             href={`/blockchain?caseId=${encodeURIComponent(data.case_id)}&hash=${encodeURIComponent(evidence?.sha256 || '')}`}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-mono font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all shadow-sm"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-mono font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 active:scale-[0.98] border border-amber-500/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 transition-all shadow-sm"
           >
             <Blocks className="w-4 h-4 text-amber-500" />
             <span>Blockchain Seal</span>
           </Link>
           <button
             onClick={handleExportJSON}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-mono font-bold text-[var(--text-primary)] bg-[var(--surface-container-low)] hover:bg-[var(--surface-container)] border border-[var(--border-subtle)] transition-all shadow-sm"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-mono font-bold text-[var(--text-primary)] bg-[var(--surface-container-low)] hover:bg-[var(--surface-container)] active:scale-[0.98] border border-[var(--border-subtle)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-cyan)] transition-all shadow-sm cursor-pointer"
             title="Download Forensic JSON"
           >
             <Download className="w-4 h-4 text-[var(--text-muted)]" />
@@ -209,7 +213,7 @@ export default function ReportPage() {
           </button>
           <button
             onClick={handlePrint}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-mono font-bold text-[var(--text-primary)] bg-[var(--surface-container-low)] hover:bg-[var(--surface-container)] border border-[var(--border-subtle)] transition-all shadow-sm"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-mono font-bold text-[var(--text-primary)] bg-[var(--surface-container-low)] hover:bg-[var(--surface-container)] active:scale-[0.98] border border-[var(--border-subtle)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-cyan)] transition-all shadow-sm cursor-pointer"
             title="Print or Save as PDF"
           >
             <Printer className="w-4 h-4 text-[var(--text-muted)]" />

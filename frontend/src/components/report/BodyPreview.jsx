@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { FileText, Copy, CheckCheck, Eye } from 'lucide-react';
+import { FileText, Copy, CheckCheck, Eye, ShieldCheck } from 'lucide-react';
 
 export default function BodyPreview({ bodyPreview }) {
   const [copied, setCopied] = useState(false);
@@ -42,8 +42,9 @@ export default function BodyPreview({ bodyPreview }) {
           {bodyPreview || '(No plain-text body content parsed from payload)'}
         </div>
       </div>
-      <p className="text-[10px] text-[var(--text-muted)] font-mono mt-3">
-        🔒 Active scripts, malicious iframes, and remote trackers were neutralized during ingestion.
+      <p className="text-[10px] text-[var(--text-muted)] font-mono mt-3 flex items-center gap-1.5">
+        <ShieldCheck className="w-3.5 h-3.5 text-[var(--primary-cyan)] shrink-0" />
+        <span>Active scripts, malicious iframes, and remote trackers were neutralized during ingestion.</span>
       </p>
     </div>
   );

@@ -14,7 +14,7 @@ export default function SignalTable({ signals = [] }) {
           </h3>
         </div>
         <p className="text-center py-4 text-xs text-[var(--text-muted)] font-mono">
-          ✓ No threat or adversarial rule signals triggered. Email passed baseline heuristic criteria.
+          <span className="font-bold text-emerald-500 mr-1.5">[PASSED]</span> No threat or adversarial rule signals triggered. Email passed baseline heuristic criteria.
         </p>
       </div>
     );
