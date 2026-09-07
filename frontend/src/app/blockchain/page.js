@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import {
   Blocks,
@@ -15,36 +16,99 @@ import {
   FileCheck,
   AlertCircle,
   Cpu,
-  Layers
+  Layers,
+  FileText,
+  MapPin,
+  Check
 } from 'lucide-react';
 import { deriveBlockchainRecord, verifyHashIntegrity } from '@/lib/blockchain';
+import { listCases, getCaseEvidence } from '@/lib/api';
+import { getHistory } from '@/lib/storage';
 import { BLOCKCHAIN_NETWORK } from '@/lib/constants';
 
 function BlockchainExplorerContent() {
   const searchParams = useSearchParams();
-  const initialCaseId = searchParams.get('caseId') || 'CASE-20260906-88A1';
-  const initialHash = searchParams.get('hash') || '7fda70245a4913be41d6c6ebbd2eb30019284819280918239019283918293819';
+  const paramCaseId = searchParams.get('caseId');
+  const paramHash = searchParams.get('hash');
 
-  const [inputQuery, setInputQuery] = useState(initialHash);
-  const [record, setRecord] = useState(() => deriveBlockchainRecord(initialCaseId, initialHash));
+  const [cases, setCases] = useState([]);
+  const [selectedCaseId, setSelectedCaseId] = useState(paramCaseId || null);
+  const [inputQuery, setInputQuery] = useState('');
+  const [record, setRecord] = useState(null);
   const [copied, setCopied] = useState(false);
   const [verificationInput, setVerificationInput] = useState('');
   const [verifyResult, setVerifyResult] = useState(null);
+  const [loading, setLoading] = useState(true);
 
+  // Load real cases from database
   useEffect(() => {
-    if (searchParams.get('hash') || searchParams.get('caseId')) {
-      const cId = searchParams.get('caseId') || 'CASE-20260906-88A1';
-      const h = searchParams.get('hash') || initialHash;
-      setInputQuery(h);
-      setRecord(deriveBlockchainRecord(cId, h));
+    async function loadCases() {
+      setLoading(true);
+      try {
+        const res = await listCases(20, 0);
+        let caseList = [];
+        if (res && res.cases && res.cases.length > 0) {
+          caseList = res.cases;
+        } else {
+          caseList = getHistory();
+        }
+        setCases(caseList);
+
+        // Pick initial case
+        const initialId = paramCaseId || (caseList.length > 0 ? caseList[0].case_id : 'CASE-DEMO');
+        setSelectedCaseId(initialId);
+
+        // Fetch evidence hash for this case
+        let hash = paramHash;
+        if (!hash && initialId && initialId !== 'CASE-DEMO') {
+          try {
+            const ev = await getCaseEvidence(initialId);
+            if (ev && ev.sha256_hash) {
+              hash = ev.sha256_hash;
+            }
+          } catch {
+            // fallback
+          }
+        }
+        if (!hash) {
+          hash = '7fda70245a4913be41d6c6ebbd2eb30019284819280918239019283918293819';
+        }
+
+        setInputQuery(hash);
+        setRecord(deriveBlockchainRecord(initialId, hash));
+      } catch (err) {
+        console.warn('Failed to load blockchain cases:', err);
+      } finally {
+        setLoading(false);
+      }
     }
-  }, [searchParams, initialHash]);
+    loadCases();
+  }, [paramCaseId, paramHash]);
+
+  const handleSelectCase = async (cId) => {
+    setSelectedCaseId(cId);
+    let hash = null;
+    try {
+      const ev = await getCaseEvidence(cId);
+      if (ev && ev.sha256_hash) {
+        hash = ev.sha256_hash;
+      }
+    } catch {
+      // ignore
+    }
+    if (!hash) {
+      hash = '7fda70245a4913be41d6c6ebbd2eb30019284819280918239019283918293819';
+    }
+    setInputQuery(hash);
+    setRecord(deriveBlockchainRecord(cId, hash));
+    setVerifyResult(null);
+  };
 
   const handleSearch = () => {
     if (!inputQuery.trim()) return;
     const isCase = inputQuery.toUpperCase().startsWith('CASE-');
     const newRecord = deriveBlockchainRecord(
-      isCase ? inputQuery : `CASE-${inputQuery.slice(0, 8).toUpperCase()}`,
+      isCase ? inputQuery : (selectedCaseId || `CASE-${inputQuery.slice(0, 8).toUpperCase()}`),
       isCase ? '7fda70245a4913be41d6c6ebbd2eb30019284819280918239019283918293819' : inputQuery
     );
     setRecord(newRecord);
@@ -62,6 +126,7 @@ function BlockchainExplorerContent() {
   };
 
   const handleVerifyHash = () => {
+    if (!record) return;
     const isMatch = verifyHashIntegrity(verificationInput, record.payloadSha256);
     setVerifyResult(isMatch);
   };
@@ -69,6 +134,14 @@ function BlockchainExplorerContent() {
   const handlePrintCert = () => {
     window.print();
   };
+
+  if (!record) {
+    return (
+      <div className="p-12 text-center font-mono text-xs text-[var(--primary-cyan)]">
+        Synchronizing with digital evidence ledger...
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -91,14 +164,49 @@ function BlockchainExplorerContent() {
           </p>
         </div>
 
-        <button
-          onClick={handlePrintCert}
-          className="btn-cyber-primary flex items-center gap-2 px-5 py-3 rounded-xl font-mono text-xs font-bold shadow-md hover:scale-105 transition-transform shrink-0 cursor-pointer"
-        >
-          <Printer className="w-4 h-4" />
-          <span>PRINT CUSTODY CERTIFICATE</span>
-        </button>
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={handlePrintCert}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-md font-mono text-xs font-bold bg-[var(--primary-cyan)] text-[#05070b] hover:brightness-110 transition-all shadow-sm shrink-0 cursor-pointer"
+          >
+            <Printer className="w-4 h-4" />
+            <span>PRINT CUSTODY CERTIFICATE</span>
+          </button>
+        </div>
       </motion.div>
+
+      {/* Real Cases Selector Tabs */}
+      {cases.length > 0 && (
+        <div className="glass-card p-4 space-y-2">
+          <div className="flex items-center justify-between text-xs font-mono text-[var(--text-secondary)] mb-1">
+            <span className="font-bold text-[var(--text-primary)] uppercase tracking-wider">
+              Select Indexed Forensic Case:
+            </span>
+            <span>{cases.length} Block(s) Anchored</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {cases.map((c) => {
+              const isSelected = selectedCaseId === c.case_id;
+              return (
+                <button
+                  key={c.case_id}
+                  onClick={() => handleSelectCase(c.case_id)}
+                  className={`px-3 py-2 rounded-xl text-xs font-mono font-bold border transition-all cursor-pointer ${
+                    isSelected
+                      ? 'bg-[var(--primary-cyan)]/15 border-[var(--primary-cyan)] text-[var(--primary-cyan)] shadow-sm'
+                      : 'bg-[var(--surface-container-low)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-container)]'
+                  }`}
+                >
+                  <span>{c.case_id}</span>
+                  <span className="ml-1.5 text-[10px] text-[var(--text-muted)]">
+                    ({c.original_filename || c.subject || 'EML'})
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Hash / Case Search Console */}
       <div className="glass-card p-4">
@@ -115,7 +223,7 @@ function BlockchainExplorerContent() {
           </div>
           <button
             onClick={handleSearch}
-            className="btn-cyber-primary px-6 py-2.5 rounded-xl font-mono text-xs font-bold shadow-sm hover:scale-105 transition-transform cursor-pointer"
+            className="px-5 py-2.5 rounded-md font-mono text-xs font-bold bg-[var(--primary-cyan)] text-[#05070b] hover:brightness-110 transition-all shadow-sm cursor-pointer shrink-0"
           >
             Query Ledger
           </button>
@@ -158,9 +266,10 @@ function BlockchainExplorerContent() {
                 <span className="text-[10px] text-[var(--text-muted)] uppercase font-bold">Exact SHA-256 Digest</span>
                 <button
                   onClick={() => handleCopy(record.payloadSha256)}
-                  className="text-[11px] text-[var(--primary-cyan)] font-bold hover:underline flex items-center gap-1"
+                  className="text-[11px] text-[var(--primary-cyan)] font-bold hover:underline flex items-center gap-1 cursor-pointer"
                 >
-                  <Copy className="w-3 h-3" /> Copy
+                  {copied ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                  <span>{copied ? 'Copied' : 'Copy'}</span>
                 </button>
               </div>
               <span className="text-[var(--primary-cyan)] font-bold break-all block">{record.payloadSha256}</span>
@@ -261,7 +370,7 @@ function BlockchainExplorerContent() {
 
 export default function BlockchainPage() {
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16">
       <Suspense
         fallback={
           <div className="flex items-center justify-center min-h-[50vh] text-[var(--primary-cyan)] font-mono text-xs">

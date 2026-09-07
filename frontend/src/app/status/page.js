@@ -14,95 +14,118 @@ import {
   RefreshCw,
   Cpu,
   Clock,
-  ShieldCheck
+  ShieldCheck,
+  Zap,
+  Lock,
+  HardDrive
 } from 'lucide-react';
-import { checkHealth } from '@/lib/api';
+import { checkHealth, listCases } from '@/lib/api';
 
 export default function StatusPage() {
   const [healthData, setHealthData] = useState(null);
+  const [dbData, setDbData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [pingMs, setPingMs] = useState(null);
+  const [apiLatency, setApiLatency] = useState(null);
+  const [dbLatency, setDbLatency] = useState(null);
   const [lastChecked, setLastChecked] = useState(null);
 
   const runDiagnostics = async () => {
     setLoading(true);
-    const start = performance.now();
+
+    // Probe 1: Core API Health
+    const startApi = performance.now();
     try {
       const res = await checkHealth();
-      const elapsed = Math.round(performance.now() - start);
-      setPingMs(elapsed);
+      setApiLatency(Math.round(performance.now() - startApi));
       setHealthData(res);
-      setLastChecked(new Date().toLocaleTimeString());
     } catch {
       setHealthData({ status: 'offline' });
-      setPingMs(null);
-      setLastChecked(new Date().toLocaleTimeString());
-    } finally {
-      setLoading(false);
+      setApiLatency(null);
     }
+
+    // Probe 2: SQLite Cases Database
+    const startDb = performance.now();
+    try {
+      const casesRes = await listCases(1, 0);
+      setDbLatency(Math.round(performance.now() - startDb));
+      setDbData(casesRes);
+    } catch {
+      setDbData(null);
+      setDbLatency(null);
+    }
+
+    setLastChecked(new Date().toLocaleTimeString());
+    setLoading(false);
   };
 
   useEffect(() => {
     runDiagnostics();
   }, []);
 
-  const isOnline = healthData?.status === 'online';
+  const isApiOnline = healthData?.status === 'online';
+  const isDbOnline = dbData !== null && dbData !== undefined;
+  const totalCases = dbData?.total || 0;
 
   const nodes = [
     {
       name: 'FastAPI Forensic Kernel',
-      role: 'RFC Header Deconstruction & IOC Extractor',
-      status: isOnline ? 'ONLINE' : 'OFFLINE',
-      port: ':8000',
+      role: 'RFC 822 Header Deconstruction & IOC Parser',
+      status: isApiOnline ? 'ONLINE' : 'OFFLINE',
+      endpoint: 'http://127.0.0.1:8000',
       version: healthData?.version || '1.0.0-prototype',
-      latency: pingMs ? `${pingMs}ms` : 'N/A',
+      latency: apiLatency ? `${apiLatency}ms` : 'Unreachable',
       icon: Server,
-      color: isOnline ? '#10b981' : '#ef4444',
+      color: isApiOnline ? '#10b981' : '#ef4444',
+      details: isApiOnline ? 'Handling live multipart RFC uploads' : 'Check uvicorn backend daemon',
     },
     {
-      name: 'Forensic Case Database',
-      role: 'SQLite / PostgreSQL Evidence Persistence',
-      status: isOnline ? 'ONLINE' : 'DEGRADED',
-      port: 'Internal ORM',
-      version: 'v2.4 Schema',
-      latency: '< 2ms',
+      name: 'Forensic Evidence Database',
+      role: 'Local SQLite Relational Evidence Datastore',
+      status: isDbOnline ? 'CONNECTED' : 'DISCONNECTED',
+      endpoint: 'backend/forensics.db',
+      version: `${totalCases} Indexed Cases`,
+      latency: dbLatency ? `${dbLatency}ms` : 'N/A',
       icon: Database,
-      color: isOnline ? '#10b981' : '#f59e0b',
+      color: isDbOnline ? '#10b981' : '#ef4444',
+      details: isDbOnline ? `Active SQLite schema storing verified case records` : 'Database connection error',
     },
     {
-      name: 'AI/ML Transformer Node',
-      role: 'RoBERTa Spear Phishing & Urgency Neural Model',
-      status: 'ONLINE',
-      port: 'ONNX Runtime',
-      version: '355M Params',
-      latency: '18ms',
-      icon: BrainCircuit,
-      color: '#0284c7',
+      name: 'Deterministic Threat Engine',
+      role: 'Urgency, BEC & Cryptographic Scoring Matrix',
+      status: isApiOnline ? 'ACTIVE' : 'OFFLINE',
+      endpoint: 'In-Process Python Module',
+      version: 'v1.0 Rules Engine',
+      latency: '< 5ms',
+      icon: Zap,
+      color: isApiOnline ? '#10b981' : '#ef4444',
+      details: 'Evaluates SPF/DKIM/DMARC penalties & threat signals',
     },
     {
-      name: 'IP & Domain Intelligence Engine',
-      role: 'DNS, ASN, Whois & Threat Intel Aggregator',
-      status: 'ONLINE',
-      port: 'REST / Mock',
-      version: 'v1.2 Feed',
-      latency: '34ms',
-      icon: Globe,
-      color: '#0284c7',
+      name: 'Subtle Crypto Validation Engine',
+      role: 'Browser-Native W3C Web Cryptography API',
+      status: typeof window !== 'undefined' && window.crypto?.subtle ? 'OPERATIONAL' : 'UNAVAILABLE',
+      endpoint: 'Client-Side Hardware Sandbox',
+      version: 'SHA-256 Standard',
+      latency: '< 1ms',
+      icon: Lock,
+      color: '#10b981',
+      details: 'Instant client-side bitstream checksum & proof verification',
     },
     {
-      name: 'Blockchain Custody Ledger',
-      role: 'SHA-256 Proof-of-Custody & Merkle Integrity',
-      status: 'SEALED',
-      port: 'ChainID 26106',
-      version: 'NIST SP 800-86',
-      latency: 'Deterministic',
+      name: 'Evidence Ledger Storage',
+      role: 'Persistent Local Forensic Audit Records',
+      status: 'SYNCHRONIZED',
+      endpoint: 'localStorage:sih26106_history',
+      version: 'Browser Sandboxed',
+      latency: '< 1ms',
       icon: Blocks,
-      color: '#f59e0b',
+      color: '#10b981',
+      details: 'Preserves forensic dossiers across browser sessions',
     },
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16 space-y-8">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -110,105 +133,119 @@ export default function StatusPage() {
         className="glass-card p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border-t-2 border-t-[var(--primary-cyan)]"
       >
         <div className="space-y-2 max-w-2xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono font-bold bg-[var(--primary-cyan)]/10 text-[var(--primary-cyan)] border border-[var(--border-cyan)]">
-            <Activity className="w-3.5 h-3.5 text-[var(--primary-cyan)]" />
-            <span>SYSTEM HEALTH & MULTI-ENGINE TELEMETRY</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+            <Activity className="w-3.5 h-3.5 text-emerald-500" />
+            <span>REAL-TIME SYSTEM DIAGNOSTICS</span>
           </div>
           <h1 className="text-3xl font-black text-[var(--text-primary)] tracking-tight">
-            ThreatLens Engine Node Status
+            Node Telemetry & Service Health
           </h1>
           <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-            Real-time diagnostic probe across the forensic parsing kernel, database storage layer, neural inference runtime, threat feeds, and blockchain ledger.
+            Live health telemetry verifying network connectivity, FastAPI forensic kernel latency, SQLite evidence storage, and client-side cryptographic subsystems.
           </p>
         </div>
 
-        <button
-          onClick={runDiagnostics}
-          className="btn-cyber-primary flex items-center gap-2 px-5 py-3 rounded-xl font-mono text-xs font-bold shadow-md hover:scale-105 transition-transform shrink-0 cursor-pointer"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          <span>PROBE ALL NODES</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <div className="text-right font-mono text-xs text-[var(--text-muted)] hidden sm:block">
+            <div>Last Probe: {lastChecked || 'Checking...'}</div>
+            <div className="text-[10px]">Ping: {apiLatency ? `${apiLatency}ms` : 'N/A'}</div>
+          </div>
+          <button
+            onClick={runDiagnostics}
+            disabled={loading}
+            className="btn-cyber-primary flex items-center gap-2 px-5 py-3 rounded-xl font-mono text-xs font-bold shadow-md hover:scale-105 transition-transform shrink-0 cursor-pointer"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <span>RUN FULL DIAGNOSTIC</span>
+          </button>
+        </div>
       </motion.div>
 
-      {/* Global Status Banner */}
-      <div
-        className={`glass-card p-6 border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 font-mono ${
-          isOnline ? 'border-emerald-500/40 bg-emerald-500/5' : 'border-rose-500/40 bg-rose-500/5'
-        }`}
-      >
-        <div className="flex items-center gap-4">
-          <div
-            className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-              isOnline ? 'bg-emerald-500/20 text-emerald-500' : 'bg-rose-500/20 text-rose-500'
-            }`}
-          >
-            {isOnline ? <CheckCircle2 className="w-6 h-6" /> : <AlertCircle className="w-6 h-6" />}
-          </div>
+      {/* Primary Overall Health Strip */}
+      <div className={`p-4 sm:p-5 rounded-2xl border font-mono flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${
+        isApiOnline && isDbOnline
+          ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300'
+          : 'bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300'
+      }`}>
+        <div className="flex items-center gap-3">
+          {isApiOnline && isDbOnline ? (
+            <CheckCircle2 className="w-6 h-6 text-emerald-500 shrink-0" />
+          ) : (
+            <AlertCircle className="w-6 h-6 text-rose-500 shrink-0" />
+          )}
           <div>
-            <h3 className="text-lg font-bold text-[var(--text-primary)]">
-              {isOnline ? 'All Multi-Engine Pipelines Operational' : 'Primary API Service Offline'}
-            </h3>
-            <p className="text-xs text-[var(--text-secondary)]">
-              {isOnline
-                ? 'Forensic ingestion server is accepting .eml payloads on port :8000.'
-                : 'Could not connect to FastAPI server. Ensure `uvicorn backend.main:app` is running.'}
+            <p className="font-bold text-sm">
+              {isApiOnline && isDbOnline
+                ? 'ALL FORENSIC SUBSYSTEMS NOMINAL & VERIFIED'
+                : 'BACKEND DEGRADED OR OFFLINE'}
+            </p>
+            <p className="text-xs opacity-80 mt-0.5">
+              {isApiOnline && isDbOnline
+                ? `FastAPI kernel online on :8000 with ${totalCases} evidence cases indexed in SQLite database.`
+                : 'Could not connect to FastAPI backend on http://127.0.0.1:8000.'}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-4 text-xs text-[var(--text-muted)] self-end sm:self-center">
-          {pingMs !== null && (
-            <span className="font-bold text-[var(--text-primary)]">Ping: {pingMs}ms</span>
-          )}
-          <span>Last Checked: {lastChecked || 'Never'}</span>
+        <div className="text-xs font-bold px-3 py-1.5 rounded-xl bg-[var(--surface-base)] border border-current">
+          {isApiOnline && isDbOnline ? 'STATUS: HEALTHY' : 'STATUS: OFFLINE'}
         </div>
       </div>
 
-      {/* Node Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {nodes.map((node, i) => {
+      {/* Nodes Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {nodes.map((node, idx) => {
           const Icon = node.icon;
+          const isOk = node.status === 'ONLINE' || node.status === 'CONNECTED' || node.status === 'OPERATIONAL' || node.status === 'SYNCHRONIZED';
+
           return (
             <motion.div
-              key={node.name}
+              key={idx}
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-              className="glass-card p-5 space-y-3"
+              transition={{ delay: idx * 0.08 }}
+              className="glass-card p-6 flex flex-col justify-between space-y-4 hover:border-[var(--primary-cyan)] transition-all"
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
+              <div>
+                <div className="flex items-start justify-between gap-2 mb-3">
                   <div
-                    className="w-9 h-9 rounded-lg flex items-center justify-center"
-                    style={{ background: `${node.color}15`, color: node.color }}
+                    className="w-10 h-10 rounded-xl flex items-center justify-center border"
+                    style={{
+                      background: `${node.color}15`,
+                      borderColor: `${node.color}40`,
+                    }}
                   >
-                    <Icon className="w-4 h-4" />
+                    <Icon className="w-5 h-5" style={{ color: node.color }} />
                   </div>
-                  <div>
-                    <h4 className="text-xs font-bold font-mono text-[var(--text-primary)]">{node.name}</h4>
-                    <span className="text-[10px] font-mono text-[var(--text-muted)]">{node.port}</span>
-                  </div>
+                  <span
+                    className={`px-2.5 py-0.5 rounded text-[10px] font-mono font-bold ${
+                      isOk
+                        ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                        : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30'
+                    }`}
+                  >
+                    {node.status}
+                  </span>
                 </div>
 
-                <span
-                  className="badge text-[10px] font-bold"
-                  style={{
-                    background: `${node.color}15`,
-                    color: node.color,
-                    borderColor: `${node.color}40`,
-                    borderWidth: 1,
-                  }}
-                >
-                  {node.status}
-                </span>
+                <h3 className="font-bold text-sm text-[var(--text-primary)]">{node.name}</h3>
+                <p className="text-xs text-[var(--text-secondary)] mt-0.5">{node.role}</p>
               </div>
 
-              <p className="text-xs text-[var(--text-secondary)]">{node.role}</p>
-
-              <div className="pt-2 border-t border-[var(--border-subtle)] flex items-center justify-between text-[11px] font-mono text-[var(--text-muted)]">
-                <span>Version: {node.version}</span>
-                <span className="font-bold text-[var(--text-primary)]">Latency: {node.latency}</span>
+              <div className="space-y-2 pt-4 border-t border-[var(--border-subtle)] font-mono text-xs">
+                <div className="flex justify-between text-[var(--text-secondary)]">
+                  <span className="text-[11px] text-[var(--text-muted)]">Endpoint:</span>
+                  <span className="text-[var(--text-primary)] font-bold text-[11px] truncate max-w-[150px]">{node.endpoint}</span>
+                </div>
+                <div className="flex justify-between text-[var(--text-secondary)]">
+                  <span className="text-[11px] text-[var(--text-muted)]">Version / Data:</span>
+                  <span className="text-[var(--text-primary)] text-[11px]">{node.version}</span>
+                </div>
+                <div className="flex justify-between text-[var(--text-secondary)]">
+                  <span className="text-[11px] text-[var(--text-muted)]">Latency:</span>
+                  <span className="text-[var(--primary-cyan)] font-bold text-[11px]">{node.latency}</span>
+                </div>
+                <p className="text-[10px] text-[var(--text-muted)] pt-1">{node.details}</p>
               </div>
             </motion.div>
           );

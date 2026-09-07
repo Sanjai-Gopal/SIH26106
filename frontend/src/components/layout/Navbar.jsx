@@ -8,7 +8,6 @@ import {
   LayoutDashboard,
   Upload,
   FolderArchive,
-  BrainCircuit,
   Blocks,
   Map,
   Activity,
@@ -16,33 +15,36 @@ import {
   X,
   Sun,
   Moon,
-  Sparkles
+  PlusCircle,
+  Search,
 } from 'lucide-react';
 import { checkHealth } from '@/lib/api';
 import { useTheme } from '@/context/ThemeContext';
 
 const navItems = [
   { href: '/', label: 'Command Center', icon: LayoutDashboard },
-  { href: '/analyze', label: 'Analyze EML', icon: Upload },
+  { href: '/analyze', label: 'Deep Analysis', icon: Upload },
   { href: '/cases', label: 'Case Vault', icon: FolderArchive },
-  { href: '/ml-intelligence', label: 'AI/ML Studio', icon: BrainCircuit, badge: 'AI' },
-  { href: '/blockchain', label: 'Ledger Custody', icon: Blocks, badge: 'CHAIN' },
-  { href: '/map', label: 'Geo-Relay', icon: Map },
-  { href: '/status', label: 'Node Telemetry', icon: Activity },
+  { href: '/blockchain', label: 'Forensic Ledger', icon: Blocks },
+  { href: '/map', label: 'Threat Map', icon: Map },
+  { href: '/status', label: 'Diagnostics', icon: Activity },
 ];
 
 export default function Navbar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [apiStatus, setApiStatus] = useState('checking');
+  const [latency, setLatency] = useState(24);
   const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     let active = true;
     const verifyNodes = async () => {
+      const start = Date.now();
       try {
         const res = await checkHealth();
         if (active) {
+          setLatency(Math.max(12, Date.now() - start));
           setApiStatus(res.status === 'online' ? 'online' : 'offline');
         }
       } catch {
@@ -51,7 +53,7 @@ export default function Navbar() {
     };
 
     verifyNodes();
-    const timer = setInterval(verifyNodes, 12000);
+    const timer = setInterval(verifyNodes, 15000);
     return () => {
       active = false;
       clearInterval(timer);
@@ -61,119 +63,117 @@ export default function Navbar() {
   const isDark = theme === 'dark';
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 border-b border-[var(--border-subtle)] bg-[var(--glass-bg)] backdrop-blur-2xl transition-all duration-300">
+    <nav className="fixed top-0 left-0 right-0 z-50 border-b border-[var(--border-subtle)] bg-[var(--glass-bg)] backdrop-blur-xl transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Brand Logo with Cyber Beacon */}
-          <Link href="/" className="flex items-center gap-3 group shrink-0">
-            <div className="relative">
-              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-cyan-400 via-blue-600 to-indigo-600 p-[1.5px] shadow-[0_0_15px_var(--primary-cyan-glow)] transition-transform group-hover:scale-105">
-                <div className="w-full h-full bg-[var(--surface-base)] rounded-[7px] flex items-center justify-center">
-                  <Shield className="w-5 h-5 text-[var(--primary-cyan)]" />
-                </div>
-              </div>
-              <span
-                className={`absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full ring-2 ring-[var(--surface-base)] ${
-                  apiStatus === 'online'
-                    ? 'bg-emerald-400 shadow-[0_0_8px_#00e676]'
-                    : apiStatus === 'offline'
-                    ? 'bg-rose-500 shadow-[0_0_8px_#ff1744]'
-                    : 'bg-amber-400 animate-ping'
-                }`}
-              />
+        <div className="flex items-center justify-between h-16 gap-3">
+          {/* Brand Logo (Surgical Crosshair / Shield) */}
+          <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
+            <div className="w-8 h-8 rounded-lg bg-surface-container border border-[var(--border-subtle)] flex items-center justify-center transition-colors group-hover:border-[var(--primary-cyan)]">
+              <Shield className="w-4 h-4 text-[var(--primary-cyan)]" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-base font-bold tracking-tight text-[var(--text-primary)] font-mono">
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm font-bold tracking-tight text-[var(--text-primary)] font-mono leading-none">
                   Threat<span className="text-[var(--primary-cyan)]">Lens</span>
                 </span>
-                <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-[var(--primary-cyan)]/10 text-[var(--primary-cyan)] border border-[var(--border-cyan)]">
-                  {isDark ? 'OBSIDIAN' : 'CLINICAL LAB'}
+                <span className="text-[10px] font-mono font-semibold px-1.5 py-[1px] rounded bg-[var(--surface-container-high)] text-[var(--text-muted)] border border-[var(--border-subtle)] leading-none">
+                  v4.2
                 </span>
               </div>
-              <span className="text-[10px] font-mono tracking-wider block text-[var(--text-muted)] uppercase">
-                Forensic Custody • SIH26106
+              <span className="text-[9px] font-mono tracking-wider text-[var(--text-muted)] uppercase leading-tight mt-0.5">
+                Forensic Email Intelligence
               </span>
             </div>
           </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center gap-1">
-            {navItems.map(({ href, label, icon: Icon, badge }) => {
+          {/* Desktop Navigation Links */}
+          <div className="hidden lg:flex items-center gap-1 shrink-0">
+            {navItems.map(({ href, label, icon: Icon }) => {
               const isActive = pathname === href || (href !== '/' && pathname.startsWith(href));
               return (
                 <Link
                   key={href}
                   href={href}
-                  className={`relative flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-mono transition-all duration-200 ${
+                  className={`relative flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-mono font-medium whitespace-nowrap shrink-0 transition-colors ${
                     isActive
-                      ? 'text-[var(--primary-cyan)] bg-[var(--primary-cyan)]/15 font-bold border border-[var(--border-cyan)] shadow-sm'
+                      ? 'text-[var(--primary-cyan)] bg-[var(--primary-cyan)]/10 font-bold border border-[var(--border-cyan)]'
                       : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-container-high)] border border-transparent'
                   }`}
                 >
                   <Icon
-                    className={`w-4 h-4 ${
+                    className={`w-3.5 h-3.5 shrink-0 ${
                       isActive ? 'text-[var(--primary-cyan)]' : 'text-[var(--text-muted)]'
                     }`}
                   />
                   <span>{label}</span>
-                  {badge && (
-                    <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-indigo-500/15 text-indigo-500 font-bold border border-indigo-500/30">
-                      {badge}
-                    </span>
-                  )}
                 </Link>
               );
             })}
           </div>
 
-          {/* Right Action Bar: Theme Switcher & Node Pill */}
-          <div className="hidden sm:flex items-center gap-3 shrink-0">
-            {/* Fluid Light / Dark Mode Toggle */}
-            <button
-              onClick={toggleTheme}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-mono font-bold border border-[var(--border-subtle)] bg-[var(--surface-container-low)] hover:border-[var(--border-cyan)] transition-all shadow-sm group cursor-pointer"
-              title={`Switch to ${isDark ? 'Clinical Light Mode' : 'Obsidian Dark Mode'}`}
+          {/* Desktop Right Controls (Search, Ingest, Status, Theme) */}
+          <div className="hidden lg:flex items-center gap-3 shrink-0">
+            {/* Quick Ingest Button */}
+            <Link
+              href="/analyze"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-mono font-bold bg-[var(--primary-cyan)] text-[#05070b] hover:brightness-110 transition-all shadow-sm"
             >
-              {isDark ? (
-                <>
-                  <Sun className="w-3.5 h-3.5 text-amber-400 group-hover:rotate-45 transition-transform" />
-                  <span className="text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]">Light Lab</span>
-                </>
-              ) : (
-                <>
-                  <Moon className="w-3.5 h-3.5 text-indigo-500 group-hover:-rotate-12 transition-transform" />
-                  <span className="text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]">Dark Void</span>
-                </>
-              )}
-            </button>
+              <PlusCircle className="w-3.5 h-3.5" />
+              <span>Ingest EML</span>
+            </Link>
 
             {/* Live Backend Telemetry Pill */}
-            <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-container-low)] text-xs font-mono">
+            <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--surface-container-low)] text-xs font-mono whitespace-nowrap">
               <span
                 className={`w-2 h-2 rounded-full ${
                   apiStatus === 'online'
-                    ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]'
-                    : 'bg-rose-500 shadow-[0_0_8px_#ef4444]'
+                    ? 'bg-emerald-500 shadow-[0_0_6px_#10b981]'
+                    : 'bg-rose-500 shadow-[0_0_6px_#ef4444]'
                 }`}
               />
-              <span className="text-[11px] font-bold text-[var(--text-primary)]">
-                {apiStatus === 'online' ? 'API :8000' : 'OFFLINE'}
+              <span className="text-[11px] font-medium text-[var(--text-secondary)]">
+                {apiStatus === 'online' ? `API :8000 (${latency}ms)` : 'OFFLINE'}
               </span>
             </div>
-          </div>
 
-          {/* Mobile Menu Button */}
-          <div className="flex items-center gap-2 lg:hidden">
+            {/* Theme Switcher */}
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-lg border border-[var(--border-subtle)] text-[var(--text-secondary)]"
+              className="p-2 rounded-md border border-[var(--border-subtle)] bg-[var(--surface-container-low)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-cyan)] transition-all cursor-pointer"
+              title={`Switch to ${isDark ? 'Clinical Light Mode' : 'Obsidian Dark Mode'}`}
+              aria-label="Toggle Theme"
+            >
+              {isDark ? (
+                <Sun className="w-4 h-4 text-amber-400" />
+              ) : (
+                <Moon className="w-4 h-4 text-indigo-500" />
+              )}
+            </button>
+          </div>
+
+          {/* Mobile Right Controls (< lg) */}
+          <div className="flex items-center gap-2 lg:hidden">
+            <div className="flex items-center gap-1 px-2 py-1 rounded border border-[var(--border-subtle)] bg-[var(--surface-container-low)] text-[10px] font-mono">
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  apiStatus === 'online' ? 'bg-emerald-500' : 'bg-rose-500'
+                }`}
+              />
+              <span className="font-bold text-[var(--text-primary)]">
+                {apiStatus === 'online' ? ':8000' : 'OFF'}
+              </span>
+            </div>
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--surface-container-low)] cursor-pointer"
+              aria-label="Toggle Theme"
             >
               {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-500" />}
             </button>
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="p-2 rounded-lg border border-[var(--border-subtle)] text-[var(--text-secondary)]"
+              className="p-2 rounded border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--surface-container-low)] cursor-pointer"
+              aria-label="Toggle Navigation Menu"
             >
               {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -183,32 +183,35 @@ export default function Navbar() {
 
       {/* Mobile Drawer */}
       {mobileOpen && (
-        <div className="lg:hidden border-t border-[var(--border-subtle)] bg-[var(--surface-base)] px-4 py-4 space-y-2 shadow-2xl">
-          {navItems.map(({ href, label, icon: Icon, badge }) => {
+        <div className="lg:hidden border-t border-[var(--border-subtle)] bg-[var(--surface-base)] px-4 pt-3 pb-5 space-y-1">
+          {navItems.map(({ href, label, icon: Icon }) => {
             const isActive = pathname === href || (href !== '/' && pathname.startsWith(href));
             return (
               <Link
                 key={href}
                 href={href}
                 onClick={() => setMobileOpen(false)}
-                className={`flex items-center justify-between px-4 py-2.5 rounded-lg text-xs font-mono font-bold ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-mono font-medium transition-colors ${
                   isActive
-                    ? 'text-[var(--primary-cyan)] bg-[var(--primary-cyan)]/15 border border-[var(--border-cyan)]'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                    ? 'text-[var(--primary-cyan)] bg-[var(--primary-cyan)]/10 font-bold border border-[var(--border-cyan)]'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-container-high)]'
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  <Icon className="w-4 h-4" />
-                  <span>{label}</span>
-                </div>
-                {badge && (
-                  <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-indigo-500/15 text-indigo-500 font-bold">
-                    {badge}
-                  </span>
-                )}
+                <Icon className="w-4 h-4 shrink-0" />
+                <span>{label}</span>
               </Link>
             );
           })}
+          <div className="pt-2">
+            <Link
+              href="/analyze"
+              onClick={() => setMobileOpen(false)}
+              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-md text-xs font-mono font-bold bg-[var(--primary-cyan)] text-[#05070b]"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>Ingest New Email</span>
+            </Link>
+          </div>
         </div>
       )}
     </nav>

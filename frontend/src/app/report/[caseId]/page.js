@@ -55,8 +55,8 @@ export default function ReportPage() {
           getCaseEvidence(caseId),
         ]);
 
-        if (caseRes && caseRes.analysis) {
-          setData(caseRes.analysis);
+        if (caseRes && (caseRes.analysis || caseRes.analysis_report)) {
+          setData(caseRes.analysis || caseRes.analysis_report);
           setEvidence(caseRes.evidence || evidRes);
         } else {
           const localData = getAnalysis(caseId);
